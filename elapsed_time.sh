@@ -1,10 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-# Usage: 
-#   start=$(date +%s.%N) # or start=$SECONDS
-#   sleep 3661.123  # 1 hour, 1 minute, 1.123 seconds
-#   elapsed_time "$start"  # Output: "01h 01m 01.123s"
+# elapsed_time: Format time duration as human-readable string
+# 
+# Usage: elapsed_time start_time [end_time]
+#   start=$(date +%s.%N)
+#   elapsed_time "$start"  # Output: "[Nd] [NNh] [NNm] NN.NNNs"
 
 elapsed_time() {
   local -- end_time=${2:-"$(date +%s.%N)"} start_time="${1:-0}"
@@ -45,14 +46,13 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     cat >&2 <<-EOT
 usage: $(basename -- "$0") start_time [end_time]
 
-start=\$(date +%s.%N)   # or start=\$SECONDS
-sleep 3661.123          # 1 hour, 1 minute, 1.123 seconds
-elapsed_time "\$start"  # Output: "01h 01m 01.123s
-
-elapsed_time 420.42678823 422.8223233
-
-elapsed_time 0 3601.238
-
+Examples:
+  start=\$(date +%s.%N)   # capture start time
+  # do something...
+  elapsed_time "\$start"  # automatic end time
+  
+  # explicit start/end times:
+  elapsed_time 0 3661.123  # Output: "01h 01m 01.123s"
 EOT
     (($#)) && exit 0
     exit 1

@@ -2,9 +2,14 @@ import time
 
 def elapsed_time(start_time, end_time=None):
   """
-  start = time.perf_counter()
-  time.sleep(3661.123)  # 1 hour, 1 minute, 1.123 seconds
-  print(elapsed_time(start))  # Output: "01h 01m 01.123s"
+Format elapsed time as a human-readable string showing days, hours, minutes, seconds.
+
+Args:
+  start_time: Starting time from time.perf_counter()
+  end_time: Ending time (defaults to current time)
+
+Returns:
+  String formatted as "[Nd] [NNh] [NNm] NN.NNNs"
   """
 
   # Use current time if end_time not provided
