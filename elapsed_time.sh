@@ -1,13 +1,13 @@
 #!/bin/bash
-set -euo pipefail
-
 # elapsed_time: Format time duration as human-readable string
 # 
 # Usage: elapsed_time start_time [end_time]
-#   start=$(date +%s.%N)
-#   elapsed_time "$start"  # Output: "[Nd] [NNh] [NNm] NN.NNNs"
+#   start_time=$(date +%s.%N)
+#   elapsed_time "$start_time"  # Output: "[Nd] [NNh] [NNm] NN.NNNs"
 
 elapsed_time() {
+  set -euo pipefail
+
   local -- end_time=${2:-"$(date +%s.%N)"} start_time="${1:-0}"
   
   # Calculate total seconds
