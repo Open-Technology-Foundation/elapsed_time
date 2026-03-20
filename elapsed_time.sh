@@ -1,64 +1,102 @@
 #!/bin/bash
 # elapsed_time: Format time duration as human-readable string
-# 
-# Usage: elapsed_time start_time [end_time]
-#   start_time=$(date +%s.%N)
-#   elapsed_time "$start_time"  # Output: "[Nd] [NNh] [NNm] NN.NNNs"
+
+# --- Function (safe to source) ---
 
 elapsed_time() {
-  set -euo pipefail
+  # Convert decimal seconds to integer microseconds via nameref (zero-fork)
+  _to_us() {
+    local -n _result=$1
+    local -- val=$2 int_part frac_part
 
-  local -- end_time=${2:-"$(date +%s.%N)"} start_time="${1:-0}"
-  
-  # Calculate total seconds
-  local -- days='0' hours='0' minutes='0'
-  local -- elapsed='0'
-  elapsed=$(echo "$end_time - $start_time" | bc --mathlib)
-  # Calculate days
-  days=$(echo "$elapsed / 86400" | bc)
-  if (( days > 0 )); then
-    printf "%dd " "$days"
-    elapsed=$(echo "$elapsed - (86400 * $days)" | bc)
-  fi
-  
-  # Calculate hours
-  hours=$(echo "$elapsed / 3600" | bc)
-  if (( hours > 0 || days > 0 )); then
-    printf "%02dh " "$hours"
-    elapsed=$(echo "$elapsed - (3600 * $hours)" | bc)
-  fi
-  
-  # Calculate minutes
-  minutes=$(echo "$elapsed / 60" | bc)
-  if (( minutes > 0 || hours > 0 || days > 0 )); then
-    printf "%02dm " "$minutes"
-    elapsed=$(echo "$elapsed - (60 * $minutes)" | bc)
-  fi
-  
-  # Always show seconds
-  printf "%.3fs" "$elapsed"
-  echo
-}
+    int_part=${val%%.*}
+    if [[ $val == *.* ]]; then
+      frac_part=${val#*.}
+    else
+      frac_part=0
+    fi
 
-# If script is called directly (not sourced), execute with provided arguments
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  (($#==0)) || [[ $1 == '-h' || $1 == '--help' ]] && {
-    cat >&2 <<-EOT
-usage: $(basename -- "$0") start_time [end_time]
+    # Pad/truncate fractional part to exactly 6 digits
+    frac_part="${frac_part}000000"
+    frac_part=${frac_part:0:6}
 
-Examples:
-  start=\$(date +%s.%N)   # capture start time
-  # do something...
-  elapsed_time "\$start"  # automatic end time
-  
-  # explicit start/end times:
-  elapsed_time 0 3661.123  # Output: "01h 01m 01.123s"
-EOT
-    (($#)) && exit 0
-    exit 1
+    # 10# forces base-10 (prevents octal interpretation of zero-padded digits)
+    _result=$(( 10#${int_part:-0} * 1000000 + 10#$frac_part ))
   }
 
-  elapsed_time "$@"
-fi
+  local -- start_time end_time
+  start_time=${1:-0}
+  end_time=${2:-$EPOCHREALTIME}
 
+  local -i start_us end_us remaining_us
+  _to_us start_us "$start_time"
+  _to_us end_us "$end_time"
+  remaining_us=$((end_us - start_us))
+
+  local -i days hours minutes
+  local -i -r day_us=86400000000 hour_us=3600000000 minute_us=60000000
+
+  days=$((remaining_us / day_us))
+  if ((days)); then
+    printf '%dd ' "$days"
+    remaining_us=$((remaining_us - days * day_us))
+  fi
+
+  hours=$((remaining_us / hour_us))
+  if ((hours || days)); then
+    printf '%02dh ' "$hours"
+    remaining_us=$((remaining_us - hours * hour_us))
+  fi
+
+  minutes=$((remaining_us / minute_us))
+  if ((minutes || hours || days)); then
+    printf '%02dm ' "$minutes"
+    remaining_us=$((remaining_us - minutes * minute_us))
+  fi
+
+  # Xe-6 = scientific notation for µs→s conversion
+  printf '%.3fs\n' "${remaining_us}e-6"
+}
+declare -fx elapsed_time
+
+[[ ${BASH_SOURCE[0]} == "$0" ]] || return 0
+
+# --- Script mode only ---
+set -euo pipefail
+shopt -s inherit_errexit
+declare -rx PATH='/usr/bin:/bin'
+
+declare -r VERSION='1.1.0'
+declare -r SCRIPT_NAME=${0##*/}
+
+die() { (($# < 2)) || >&2 printf '%s: %s\n' "$SCRIPT_NAME" "${*:2}"; exit "${1:-0}"; }
+
+show_help() {
+  cat <<HELP
+usage: $SCRIPT_NAME start_time [end_time]
+
+Examples:
+  start=\$EPOCHREALTIME    # capture start time
+  # do something...
+  elapsed_time "\$start"  # automatic end time
+
+  # explicit start/end times:
+  elapsed_time 0 3661.123  # Output: "01h 01m 01.123s"
+HELP
+}
+
+while (($#)); do
+  case $1 in
+    -h|--help)    show_help; exit 0 ;;
+    -V|--version) echo "$SCRIPT_NAME $VERSION"; exit 0 ;;
+    --)           shift; break ;;
+    -*)           die 22 "Invalid option ${1@Q}" ;;
+    *)            break ;;
+  esac
+  shift
+done
+
+(($#)) || { >&2 show_help; exit 1; }
+
+elapsed_time "$@"
 #fin

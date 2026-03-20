@@ -33,23 +33,28 @@ print(elapsed_time(0, 3661.123))  # Output: "01h 01m 01.123s"
 
 ### Bash
 
-```bash
-# directly from command line
-elapsed_time 0 3661.123  # Output: "01h 01m 01.123s"
+Requires Bash 5.0+ (uses `$EPOCHREALTIME`).
 
-# OR import the function
+```bash
+# As a script
+bash elapsed_time.sh 0 3661.123   # Output: "01h 01m 1.123s"
+bash elapsed_time.sh --version     # Output: "elapsed_time.sh 1.1.0"
+
+# As a sourced function
 source elapsed_time.sh
 
-# Start timing
-start=$(date +%s.%N)
+start=$EPOCHREALTIME
+sleep 1.5
+elapsed_time "$start"              # Output: "1.500s"
 
-# Do something...
-sleep 1.5  # Simulate work
-
-# Print elapsed time
-elapsed_time "$start"  # Output: "01.500s"
-
+# Explicit start/end
+elapsed_time 0 90061.456           # Output: "1d 01h 01m 1.456s"
 ```
+
+| Option | Description |
+|--------|-------------|
+| `-h`, `--help` | Show usage |
+| `-V`, `--version` | Show version |
 
 ## Installation
 
