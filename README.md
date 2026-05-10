@@ -2,6 +2,10 @@
 
 Utility functions for formatting elapsed time durations in a human-readable format. Available in both Python and Bash.
 
+```bash
+git clone https://github.com/Open-Technology-Foundation/elapsed_time.git && cd elapsed_time && sudo make install
+```
+
 ## Features
 
 - Format time durations with intelligent unit display
@@ -37,11 +41,11 @@ Requires Bash 5.0+ (uses `$EPOCHREALTIME`).
 
 ```bash
 # As a script
-bash elapsed_time.sh 0 3661.123   # Output: "01h 01m 1.123s"
-bash elapsed_time.sh --version     # Output: "elapsed_time.sh 1.1.0"
+elapsed_time 0 3661.123           # Output: "01h 01m 1.123s"
+elapsed_time --version             # Output: "elapsed_time 1.1.0"
 
 # As a sourced function
-source elapsed_time.sh
+source elapsed_time
 
 start=$EPOCHREALTIME
 sleep 1.5
@@ -58,7 +62,19 @@ elapsed_time 0 90061.456           # Output: "1d 01h 01m 1.456s"
 
 ## Installation
 
-Copy the files to your project directory or add this repository to your path.
+```bash
+git clone https://github.com/Open-Technology-Foundation/elapsed_time.git
+cd elapsed_time
+sudo make install
+```
+
+For user-local install (no sudo):
+
+```bash
+make install-user
+```
+
+Run `make help` to see all targets.
 
 ## Contributing
 
